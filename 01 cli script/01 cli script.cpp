@@ -1,5 +1,3 @@
-
-
 /*
 
 01 - Command line script execution
@@ -38,29 +36,35 @@ Discussion :
 */
 
 #include <iostream>
-#include "../v8/v8.h"
+#include "include/v8.h"
+#include "include/libplatform/libplatform.h"
 #include "../common/common.h"
 using namespace v8;
-
+using namespace std;
 
 int main(int argc, char **argv) 
 {
-        //Quite simple, these are scope based 'managers'.
-        //One protects threading issues, and one manages
-        //the creation of JS handles, for clean up.
+    // Initialize V8.
+    V8::InitializeICU();
+    Platform* platform = platform::CreateDefaultPlatform();
+    V8::InitializePlatform(platform);
+    V8::Initialize();
 
-    Locker locker;
-    HandleScope handle_scope;
+    //Quite simple, these are scope based 'managers'.
+    //One protects threading issues, and one manages
+    //the creation of JS handles, for clean up.
 
-        //Create a global object template. This can be stamped
-        //repeatedly with little cost into new execution contexts.
-        //Note the word template! It is a 'definition' of the context.
-        //This is important to get - when you expose something into the
-        //global object - it is an instance. When you expose something
-        //onto the global template - ALL contexts can share the same 
-        //exposed values without needing to redo the expose process.
+    Isolate* isolate = Isolate::New();
+    {
+        Isolate::Scope isolate_scope(isolate);
 
-    Handle<ObjectTemplate> globalTemplate = ObjectTemplate::New();
+        // Create a stack-allocated handle scope.
+        HandleScope handle_scope(isolate);
+
+        Locker locker(isolate);
+
+        // Create a new context.
+        Local<Context> context = Context::New(isolate);
 
         //A context is a fresh execution context. Take for example, 
         //a browser tab or frame in Google Chrome. Each of these are
@@ -68,21 +72,22 @@ int main(int argc, char **argv)
         //on demand. When executing scripts, you can execute them in 
         //and existing context by using the Context::context_scope 
         //handlers. This 'switches' context for that execution period
-        
-        //In this case, we only need one new context.
-    Handle<Context> context = Context::New( NULL, globalTemplate );
+        Context::Scope context_scope(context);
 
         //If we receive an argument, execute the script file
 
-    if(argc > 1) {
-
-        eScriptExecResult r = executeScript( std::string( argv[1] ) , context );
-
-    } else {
-
-        printf("Usage: <scriptname.js> \n Execute the javascript file.");
+        if(argc > 1) {
+            eScriptExecResult r = executeScript(isolate, context, string(argv[1]));
+        } else {
+            printf("Usage: <scriptname.js> \n Execute the javascript file.");
+        }
 
     }
 
+    // Dispose the isolate and tear down V8.
+    isolate->Dispose();
+    V8::Dispose();
+    V8::ShutdownPlatform();
+    delete platform;
     return 0;
 }

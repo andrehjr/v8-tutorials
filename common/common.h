@@ -1,170 +1,144 @@
 
 #pragma once
 #include "include/v8.h"
+#include <fstream>
+#include <vector>
+
 using namespace v8;
+using namespace std;
 
 enum eScriptExecResult {
-	eSCRIPT_ERROR_UNKNOWN = 0,
-	eSCRIPT_ERROR_NOT_FOUND,
-	eSCRIPT_ERROR_EMPTY_SOURCE,
-	eSCRIPT_ERROR_COMPILE_FAILED,
-	eSCRIPT_ERROR_NONE,
-	eSCRIPT_ERROR_COUNT
+    eSCRIPT_ERROR_UNKNOWN = 0,
+    eSCRIPT_ERROR_NOT_FOUND,
+    eSCRIPT_ERROR_EMPTY_SOURCE,
+    eSCRIPT_ERROR_COMPILE_FAILED,
+    eSCRIPT_ERROR_NONE,
+    eSCRIPT_ERROR_COUNT
 };
 
-
- /* Return a file size from a FILE pointer */
-const int getFileSize( FILE *f ) 
+string fileToString(const string &fileName)
 {
-    if(f == NULL) return -1;
-    int size = -1;
+    ifstream ifs(fileName.c_str(), ios::in | ios::binary | ios::ate);
 
-    fseek(f, 0, SEEK_END);
-     size = ftell(f);
-	rewind(f);
+    if(ifs.fail()){
+        printf("File dos not exist! %s\n", fileName.c_str());
+        return "";
+    }
 
-    return size;
+    ifstream::pos_type fileSize = ifs.tellg();
+    ifs.seekg(0, ios::beg);
+
+    vector<char> bytes(fileSize);
+    ifs.read(&bytes[0], fileSize);
+
+    return string(&bytes[0], fileSize);
 }
 
     /* Function to print errors to the console */
-void reportException( TryCatch* try_catch ) 
+void reportException(Isolate* isolate,
+                     TryCatch* try_catch ) 
 {
-    Locker lock;
-    HandleScope handle_scope;
+    Locker lock(isolate);
+    HandleScope handle_scope(isolate);
 
-        //Get a string from the error message and exception detail
+    //Get a string from the error message and exception detail
     String::Utf8Value exception( try_catch->Exception() );
     Handle<Message> message = try_catch->Message();
 
-        //This error has no message
-    if ( message.IsEmpty() ) 
+    //This error has no message
+    if (message.IsEmpty()) 
     {
         printf("%s\n" , *exception );
         return;
     }
-	   
+
     char ex[1024];
     String::Utf8Value filename( message->GetScriptResourceName() );
     int linenum = message->GetLineNumber();
 
-        // Print (filename):(line number): (message).
-	sprintf( ex , "%s:%i: %s\n", *filename , linenum , *exception );
-    printf(ex);
+    // Print (filename):(line number): (message).
+    sprintf( ex , "%s:%i: %s\n", *filename , linenum , *exception );
+    printf("%s", ex);
 
-	    // Print line of source code.
-	String::Utf8Value sourceline( message->GetSourceLine() );
-	printf( "%s\n", *sourceline );
+    // Print line of source code.
+    String::Utf8Value sourceline( message->GetSourceLine() );
+    printf( "%s\n", *sourceline );
 
 }
 
 /*  readFile from the v8 samples. 
     Returns a v8::String from a file. */
-const Handle<String> readFile( const std::string &str ) 
+const char* readFile(Isolate* isolate, const string str ) 
 {
-    //Handle scope explained later,
-    //simply collects all v8::Handle items.
-    HandleScope scope;
-
-    FILE* file = fopen( str.c_str() , "rb" );
-    if (file == NULL) return Handle<v8::String>();
-
-    int size = getFileSize( file );
-
-        //Null terminate, and load the file into
-        //memory, so we can return a v8::String
-
-	  char* chars = new char[size + 1]; 
-	   chars[size] = '\0';
-
-	  for (int i = 0; i < size;) 
-      {
-		int read = fread( &chars[i] , 1, size - i, file);
-		i += read;
-	  }
-
-	  fclose(file);
-       Handle<String> result = v8::String::New(chars, size);
-	  delete[] chars;
-
-        //This cleans the handles up, but reserves the result
-        //for the caller to use as it wishes.
-      return scope.Close( result );
+    return fileToString(str).c_str();
 }
 
 
     /* Execute a specific piece of text in the execution context specified */
-bool executeString( Handle<String> source, Handle<Value> name, const Handle<Context> &executionContext ) 
+bool executeString(Isolate* isolate,
+                   const Handle<Context> &context,
+                   Local<String> source)
+{
+   // Locker lock(isolate);
+    HandleScope handle_scope(isolate);
+
+    if (source->Length() == 0) return false;
+
+    //Switch to the context we want to execute in
+    Context::Scope context_scope(context);
+
+    //Try to compile the script code
+    TryCatch try_catch;
+
+    // Compile the source code.
+    Local<Script> script = Script::Compile(source);
+
+    //If the script is empty, there were compile errors.
+    if ( script.IsEmpty() )
     {
-	  Locker lock;
-      HandleScope handle_scope;
+        reportException(isolate, &try_catch );
+        return false;
+    } else {
+        //So if compilation succeeds, execute it.
+        Handle<Value> result = script->Run();
 
-      if( source->Length() == 0 ) return false;
-
-        //Switch to the context we want to execute in
-	  Context::Scope context_scope( executionContext );
-
-        //Try to compile the script code
-	  TryCatch try_catch;
-	  Handle<Script> script = Script::Compile( source, name );
-
-        //If the script is empty, there were compile errors.
-	  if ( script.IsEmpty() ) 
-      {
-
-        reportException( &try_catch );
-		return false;
-
-	  } 
-      else 
-      {
-            //So if compilation succeeds, execute it.
-		Handle<Value> result = script->Run();
-
-            //If the results are empty, there was a runtime
-            //error, so we can report these errors.
-		if ( result.IsEmpty() ) 
+        //If the results are empty, there was a runtime
+        //error, so we can report these errors.
+        if ( result.IsEmpty() ) 
         {
-			reportException( &try_catch );
-		    return false;
-		} 
-        else 
-        {
+            reportException(isolate, &try_catch );
+            return false;
+        }  else {
             //If there is a result, print it to the console
-		  if ( !result->IsUndefined() && !result.IsEmpty() ) 
-          {
-                    //Convert the results to string
-                v8::String::Utf8Value str( result );
-			    printf("%s\n", *str);
-		  }
-
+            if ( !result->IsUndefined() && !result.IsEmpty() ) 
+            {
+                //Convert the results to string
+                String::Utf8Value utf8(result);
+                printf("%s\n", *utf8);
+            }
             //Done
-		  return true;
-		}
-	  }
-	}
+            return true;
+        }
+    }
+}
 
 
     /* Execute the script by filename in the execution context specified */
-const eScriptExecResult executeScript( const std::string &filename, const Handle<Context> &executionContext )
+eScriptExecResult executeScript(Isolate* isolate,
+                               Local<Context> context,
+                               string filename)
 {
-        //A v8 Locker allows multithreading 
-        //in the debuggers, and elsewhere to work.
-	Locker lock;
-        //A handle scope for collecting handles
-    HandleScope handle_scope;
-        
+
     //The source code of this file.
-    v8::Handle<v8::String> source;
+    Local<String> source = String::NewFromUtf8(isolate, readFile(isolate, filename));
 
-        //Fetch the file 
-    source = readFile( filename.c_str() );
+    //printf("%s\n", String::NewFromUtf8(isolate, source));
+    //No data in the file.
+    if( source.IsEmpty() ) return eSCRIPT_ERROR_EMPTY_SOURCE;
 
-        //No data in the file.
-	if( source.IsEmpty() ) return eSCRIPT_ERROR_EMPTY_SOURCE;
+    //Return compilation error
+    if ( !executeString(isolate, context, source)) return eSCRIPT_ERROR_COMPILE_FAILED;
 
-        //Return compilation error
-    if( !executeString( source, String::New( filename.c_str() ), executionContext )) return eSCRIPT_ERROR_COMPILE_FAILED;
-
-        //Succesfully executed
+    //Succesfully executed
     return eSCRIPT_ERROR_NONE;
 }
