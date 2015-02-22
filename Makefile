@@ -8,5 +8,8 @@ build-cli-script: clean
 build-expose-functions: clean
 	$(CC) $(V8_INCLUDES) src/expose-functions.cpp -o out/expose-functions
 
+build-expose-objects: clean
+	$(CC) $(V8_INCLUDES) src/expose-objects.cpp -o out/expose-objects
+
 clean:
 	-rm -rf out/*
