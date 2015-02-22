@@ -61,8 +61,6 @@ int main(int argc, char **argv)
         // Create a stack-allocated handle scope.
         HandleScope handle_scope(isolate);
 
-        Locker locker(isolate);
-
         // Create a new context.
         Local<Context> context = Context::New(isolate);
 

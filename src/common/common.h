@@ -79,7 +79,6 @@ bool executeString(Isolate* isolate,
                    const Handle<Context> &context,
                    Local<String> source)
 {
-   // Locker lock(isolate);
     HandleScope handle_scope(isolate);
 
     if (source->Length() == 0) return false;
@@ -87,8 +86,7 @@ bool executeString(Isolate* isolate,
     //Switch to the context we want to execute in
     Context::Scope context_scope(context);
 
-    //Try to compile the script code
-    TryCatch try_catch;
+    TryCatch try_catch(isolate);
 
     // Compile the source code.
     Local<Script> script = Script::Compile(source);
@@ -104,9 +102,9 @@ bool executeString(Isolate* isolate,
 
         //If the results are empty, there was a runtime
         //error, so we can report these errors.
+
         if ( result.IsEmpty() ) 
         {
-            reportException(isolate, &try_catch );
             return false;
         }  else {
             //If there is a result, print it to the console
@@ -132,7 +130,6 @@ eScriptExecResult executeScript(Isolate* isolate,
     //The source code of this file.
     Local<String> source = String::NewFromUtf8(isolate, readFile(isolate, filename));
 
-    //printf("%s\n", String::NewFromUtf8(isolate, source));
     //No data in the file.
     if( source.IsEmpty() ) return eSCRIPT_ERROR_EMPTY_SOURCE;
 
