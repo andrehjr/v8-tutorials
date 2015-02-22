@@ -38,7 +38,7 @@ Discussion :
 #include <iostream>
 #include "include/v8.h"
 #include "include/libplatform/libplatform.h"
-#include "../common/common.h"
+#include "common/common.h"
 using namespace v8;
 using namespace std;
 
