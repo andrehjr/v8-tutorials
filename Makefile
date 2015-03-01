@@ -11,5 +11,8 @@ build-expose-functions: clean
 build-expose-objects: clean
 	$(CC) $(V8_INCLUDES) src/expose-objects.cpp -o out/expose-objects
 
+build-expose-types: clean
+	$(CC) $(V8_INCLUDES) src/expose-types.cpp -o out/expose-types
+
 clean:
 	-rm -rf out/*

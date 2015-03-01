@@ -1,36 +1,6 @@
 /*
-
-    02 - Exposing global functions in v8.
-        
-        Verbosity is a nightmare when scripting, and often the most used
-        functions should be named and easily accessible for scripters. 
-        For example, the print/echo/log/etc function should be a globally
-        accessible function with a short and easy to remember name. 
-
-    This tutorial covers exposing functions directly as global functions.
-
-Common: 
-    What?
-        A simple introduction to understanding the v8 javascript engine.
-    Why?
-        Written for the #altdevblog www.altdevblogaday.com group.
-    Who? 
-        Written by Sven Bergstr�m ( FuzzYspo0N ).
-
-    
-Discussion :
-    
-    These examples will serve the simple purpose of demonstrating commonly 
-    asked questions with regards to v8 and the embedding of javascript 
-    into a c++ application.
-
-    Disclaimer - I am no expert on v8. I just use it, and have hit the wall
-    a number of times. Hopefully, anything I say will help you understand the
-    mentality, concepts and structure of the v8 engine and how to use it based
-    on the journey that I have travelled with the engine.
-
-    For the full post and more info - see the following link - http://altdevblogaday.com/change-is-as-good-as-a-holiday-an-introductio
-
+    Exposing functions into js with v8. 
+    Usage: ./out/expose-functions print.js
 */
 
 #include <iostream>

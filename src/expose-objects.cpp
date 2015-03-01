@@ -1,35 +1,6 @@
 /*
-
-03 - Exposing preset objects in v8. 
-
-        Often important is creating preset objects in script land. For example,
-        in my tech i have a core object, and many other objects already defined 
-        in the javascript scope before the first script is loaded. 
-            audio.createSound, filesys.read, core.version etc.
-    
-    This tutorial covers the basics of exposing preset objects into a context.
-
-Common: 
-    What?
-        A simple introduction to understanding the v8 javascript engine.
-    Why?
-        Written for the #altdevblog www.altdevblogaday.com group.
-    Who? 
-        Written by Sven Bergstr�m ( FuzzYspo0N ).
-
-    
-Discussion :
-    
-    These examples will serve the simple purpose of demonstrating commonly 
-    asked questions with regards to v8 and the embedding of javascript 
-    into a c++ application.
-
-    Disclaimer - I am no expert on v8. I just use it, and have hit the wall
-    a number of times. Hopefully, anything I say will help you understand the
-    mentality, concepts and structure of the v8 engine and how to use it based
-    on the journey that I have travelled with the engine.
-
-    For the full post and more info - see the following link  - http://altdevblogaday.com/change-is-as-good-as-a-holiday-an-introductio
+  Exposing properties from objects in v8. 
+  Usage: ./out/expose-objects game.js
 
 */
 
@@ -158,7 +129,6 @@ Game* UnwrapGameObject(Local<Object> jsObject )
 
 int main(int argc, char **argv) 
 {
-
     // Initialize V8.
     V8::InitializeICU();
     Platform* platform = platform::CreateDefaultPlatform();

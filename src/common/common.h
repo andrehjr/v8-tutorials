@@ -102,9 +102,9 @@ bool executeString(Isolate* isolate,
 
         //If the results are empty, there was a runtime
         //error, so we can report these errors.
-
         if ( result.IsEmpty() ) 
         {
+            reportException(isolate, &try_catch );
             return false;
         }  else {
             //If there is a result, print it to the console

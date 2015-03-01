@@ -1,38 +1,6 @@
 /*
-
-01 - Command line script execution
-    
-    A simple primer to understanding the v8 workflow. This is not meant
-    to do much more than print a result of a script execution. But, it 
-    does demonstrate how to create a global template, a context, and 
-    how the script file makes it's way from disk into the context.
-    
-    The scope of tutorial 1 is not to dig into those details, but a method
-    of getting v8 running within minutes for you to mess around with.
-
-Common: 
-    What?
-        A simple introduction to understanding the v8 javascript engine.
-    Why?
-        Written for the #altdevblog www.altdevblogaday.com group.
-    Who? 
-        Written by Sven Bergström ( FuzzYspo0N ).
-
-    
-Discussion :
-    
-    These examples will serve the simple purpose of demonstrating commonly 
-    asked questions with regards to v8 and the embedding of javascript 
-    into a c++ application.
-
-    Disclaimer - I am no expert on v8. I just use it, and have hit the wall
-    a number of times. Hopefully, anything I say will help you understand the
-    mentality, concepts and structure of the v8 engine and how to use it based
-    on the journey that I have travelled with the engine.
-
-    For the full post and more info - see the following link -
-
-
+    Just run any file passed from args
+    Usage: ./out/cli-script anyfile.js
 */
 
 #include <iostream>
